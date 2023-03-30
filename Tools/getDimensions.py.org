@@ -73,7 +73,6 @@ sLTF = "q"
 sLTFDsc = {
 	"q" : translate("getDimensions", "quick, quantity first"),
 	"n" : translate("getDimensions", "names, objects listing"),
-	"w" : translate("getDimensions", "woodworking, named cut listing"),
 	"g" : translate("getDimensions", "group, grandparent or parent folder name first"),
 	"e" : translate("getDimensions", "edgeband, extended edge"),
 	"d" : translate("getDimensions", "detailed, edgeband, drill holes, countersinks"),
@@ -624,7 +623,7 @@ def showQtGUI():
 				self.setSubmenu("show")
 
 			# edgeband code
-			if selectedText == "e" or selectedText == "d" or selectedText == "rd":
+			if selectedText == "e" or selectedText == "d":
 				self.ecL.show()
 				self.ecO.show()
 				self.ectiL.show()
@@ -792,20 +791,6 @@ def showError(iCaller, iObj, iPlace, iError):
 def getUnit(iValue, iType, iCaller="getUnit"):
 
 	# for dimensions
-	if iType == "rd":
-	
-		gFakeCube.Length = float(iValue)
-		v = gFakeCube.Length.getValueAs(gUnitC).Value
-
-		if sUnitsMetric == "mm":
-			return str( int(round(v, 0)) )
-		
-		if sUnitsMetric == "m":
-			return str( round(v * float(0.001), 3) )
-		
-		if sUnitsMetric == "in":
-			return str( round(v * float(0.0393700787), 3) )# for dimensions
-			
 	if iType == "d":
 	
 		gFakeCube.Length = float(iValue)
@@ -880,10 +865,6 @@ def toSheet(iValue, iType, iCaller="toSheet"):
 	# prevent FreeCAD to change "18 mm" string into "18.0 mm"
 	
 	# for dimensions
-	# AE-Change raw dimension
-	if iType == "rd":
-		return  "=<<" + getUnit(iValue, iType, iCaller) + ">>"
-
 	if iType == "d":
 		return  "=<<" + getUnit(iValue, iType, iCaller) + " " + sUnitsMetric + ">>"
 
@@ -1043,19 +1024,6 @@ def getGroup(iObj, iCaller="getGroup"):
 			except:
 				vGroup = ""
 	
-	# get parent for LinkGroup
-	if vGroup == "":
-		try:
-			vGroup = iObj.InListRecursive[1].Label
-		except:
-			vGroup = ""
-	
-	if vGroup == "":
-		try:
-			vGroup = iObj.InListRecursive[0].Label
-		except:
-			vGroup = ""
-	
 	return vGroup
 
 
@@ -1077,11 +1045,11 @@ def getKey(iObj, iW, iH, iL, iType, iCaller="getKey"):
 	vKey += str(vKeyArr[2])
 
 	# key for name report
-	if (iType == "d" or iType == "rd") and (sLTF == "n" or sLTF == "e" or sLTF == "d" or sLTF == "w"):
+	if iType == "d" and (sLTF == "n" or sLTF == "e" or sLTF == "d"):
 		vKey = str(vKey) + ":" + str(iObj.Label)
 
 	# key for group report
-	if (iType == "d" or iType == "rd") and (sLTF == "g" or sLTF == "d"):
+	if iType == "d" and (sLTF == "g" or sLTF == "d"):
 		
 		# get grandparent or parent group name
 		vGroup = getGroup(iObj, iCaller)
@@ -3071,102 +3039,6 @@ def setViewN(iCaller="setViewN"):
 
 
 # ###################################################################################################################
-def setViewW(iCaller="setViewW"):
-
-	global gSheet
-	global gSheetRow
-	
-	gSheetRow = 1
-
-	# set headers
-	gSheet.set("A1", gLang1)
-	gSheet.set("B1", gLang3)
-	gSheet.set("F1", gLang4)
-	gSheet.set("F1", gLang2)
-	gSheet.set("G1", gLang5)
-
-	# text header decoration
-	gSheet.setStyle("A1:G1", "bold", "add")
-
-	# merge cells
-	gSheet.mergeCells("B1:D1")
-
-	# set background
-	vCell = "A" + str(gSheetRow) + ":G" + str(gSheetRow)
-	gSheet.setBackground(vCell, gHeadCS)
-
-	# go to next spreadsheet row
-	gSheetRow = gSheetRow + 1
-
-	# add values
-	for key in dbDA.keys():
-
-		a = key.split(":")
-		# FreeCAD.Console.PrintMessage("\n setViewW Row:" + str(gSheetRow) +" " +str(key))
-		gSheet.set("A" + str(gSheetRow), toSheet(a[3], "string", iCaller))
-		gSheet.set("B" + str(gSheetRow), toSheet(a[1], "rd", iCaller))
-		gSheet.set("C" + str(gSheetRow), toSheet(a[2], "rd", iCaller))
-		gSheet.set("D" + str(gSheetRow), sUnitsMetric)
-		gSheet.set("E" + str(gSheetRow), toSheet(a[0], "d", iCaller))
-		gSheet.set("F" + str(gSheetRow), toSheet(dbDQ[key], "string", iCaller))
-		gSheet.set("G" + str(gSheetRow), toSheet(dbDA[key], "area", iCaller))
-		# AE-Change	
-		# gSheet.set("H" + str(gSheetRow), toSheet(key, "string", iCaller))
-
-		# go to next spreadsheet row
-		gSheetRow = gSheetRow + 1
-
-	# cell sizes
-	gSheet.setColumnWidth("A", 215)
-	gSheet.setColumnWidth("B", 90)
-	gSheet.setColumnWidth("C", 90)
-	gSheet.setColumnWidth("D", 30)
-	gSheet.setColumnWidth("E", 100)
-	gSheet.setColumnWidth("F", 80)
-	gSheet.setColumnWidth("G", 120)
-
-	# alignment
-	gSheet.setAlignment("A1:A" + str(gSheetRow), "left", "keep")
-	gSheet.setAlignment("B1:B" + str(gSheetRow), "right", "keep")
-	gSheet.setAlignment("C1:C" + str(gSheetRow), "right", "keep")
-	gSheet.setAlignment("D1:D" + str(gSheetRow), "center", "keep")
-	gSheet.setAlignment("E1:E" + str(gSheetRow), "right", "keep")
-	gSheet.setAlignment("F1:F" + str(gSheetRow), "right", "keep")
-	gSheet.setAlignment("G1:G" + str(gSheetRow), "right", "keep")
-
-	# fix for center header text in merged cells
-	gSheet.setAlignment("B1:B1", "center", "keep")
-	gSheet.setAlignment("D1:D1", "center", "keep")
-	gSheet.setAlignment("E1:E1", "center", "keep")
-
-	# ########################################################
-	# thickness part - depends on view columns order, so better here
-	# ########################################################
-
-	# add summary title for thickness
-	vCell = "A" + str(gSheetRow) + ":G" + str(gSheetRow)
-	gSheet.mergeCells(vCell)
-	gSheet.set(vCell, gLang7)
-	gSheet.setStyle(vCell, "bold", "add")
-	gSheet.setAlignment(vCell, "left", "keep")
-	gSheet.setBackground(vCell, gHeadCS)
-
-	# go to next spreadsheet row
-	gSheetRow = gSheetRow + 1
-	
-	for key in dbTQ.keys():
-
-		gSheet.set("E" + str(gSheetRow), toSheet(key, "d", iCaller))
-		gSheet.set("F" + str(gSheetRow), toSheet(dbTQ[key], "string", iCaller))
-		gSheet.set("G" + str(gSheetRow), toSheet(dbTA[key], "area", iCaller))
-		gSheet.setAlignment("E" + str(gSheetRow), "right", "keep")
-		gSheet.setAlignment("F" + str(gSheetRow), "right", "keep")
-		gSheet.setAlignment("G" + str(gSheetRow), "right", "keep")
-
-		# go to next spreadsheet row
-		gSheetRow = gSheetRow + 1
-
-# ###################################################################################################################
 def setViewG(iCaller="setViewG"):
 
 	global gSheet
@@ -4259,11 +4131,6 @@ def selectView(iCaller="selectView"):
 	# main report - name
 	if sLTF == "n":
 		setViewN(iCaller)
-		setViewEdge(iCaller)
-		
-	# main report - Woodworking added by AE
-	if sLTF == "w":
-		setViewW(iCaller)
 		setViewEdge(iCaller)
 
 	# main report - group
